@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain_Layer.Models
+namespace Application_Layer.DTO
 {
-    public class Student:BaseEntity
+    public class StudentDTO:BaseDTO
     {
         public string Name { get; set; } = String.Empty;
-        public int Age { get; set;}
+        public int Age { get; set; }
         public string? Description { get; set; }
     }
 }
