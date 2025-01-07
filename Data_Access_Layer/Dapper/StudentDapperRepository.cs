@@ -6,71 +6,85 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
+using static Dapper.SqlMapper;
 
 namespace Data_Access_Layer.Dapper
 {
-    public class StudentDapperRepository : IRepository<Student>
+    public sealed class StudentDapperRepository : IRepository<Student>
     {
         private readonly IConfiguration _configuration;
-       // private SqlLiteDBCreation sqliteDb;
+        // private SqlLiteDBCreation sqliteDb;
 
         public StudentDapperRepository(IConfiguration configuration) {
-        
+
             _configuration = configuration;
             // sqliteDb = new SqlLiteDBCreation(configuration);
-            
 
         }
 
-        public Task<Student> Add(Student entity)
+
+        private SqliteConnection GetConnection() =>new (_configuration.GetConnectionString("SqliteConnection"));          
+        
+
+        public async Task<Student> Add(Student entity)
         {
-            throw new NotImplementedException();
+            using var _connection=GetConnection();
+            var sqlQuery = "Insert into Student(Name,Age,Description ) values (@name, @age, @description)";
+            await _connection.ExecuteAsync(sqlQuery, new { name = entity.Name, age = entity.Age, description = entity.Description});
+            return entity;
+
         }
 
-        public void Delete(int entity)
+        public async Task<int> Delete(int entityId)
         {
-            throw new NotImplementedException();
+            using var _connection = GetConnection();
+            var sqlQuery = "Delete from Student where Id=@id";
+            return await _connection.ExecuteAsync(sqlQuery, new { id = entityId });
+           
         }
-
         public async Task<IEnumerable<Student>> GetAll()
         {
-
-
-            //Task<IEnumerable<Student>> students= new List<Student>();
-
-            //if (await sqliteDb.CreateSqlLiteDBAsync()) {
-
-
-            using var _connection = new SqliteConnection(_configuration.GetConnectionString("SqliteConnection"));
-
+            using var _connection = GetConnection();
             var slqQuery = "select * from Student";
-
             var students = _connection.QueryAsync<Student>(slqQuery);
-
             return await students;
-
-            //}
-
-            //return Enumerable.Empty<Student>();
-
-
         }
 
-        public async Task<Student> GetById(int studentId)
+        public async Task<Student?> GetById(int studentId)
         {
-            using var _connection = new SqliteConnection(_configuration.GetConnectionString("SqliteConnection"));
-
-            var student = await _connection.QueryFirstAsync<Student>("select * from Student where Id=@id", new { id=studentId });
-
+            using var _connection = GetConnection();
+            var slqQuery = "select * from Student where Id=@id";
+            var student = await _connection.QueryFirstAsync<Student>(slqQuery, new { id=studentId });
             return student;   
 
         }
 
-        public Task<Student> Update(Student entity)
+        public async Task<int> Update(Student entity)
+        {
+            using var _connection = GetConnection();
+            var sqlQuery = "Update Student set Name=@name, Age=@age, Description=@description where Id=@id";
+            return await _connection.ExecuteAsync(sqlQuery, new {id=entity.Id, name=entity.Name, age=entity.Age, description=entity.Description });
+           
+        }
+
+        public Task<IQueryable<Student>> ExecuteQuery(Expression<Func<Student, bool>> predicate)
         {
             throw new NotImplementedException();
         }
+
+
+        /* public IQueryable<Student> Retrieve()
+         {
+             IQueryable<Student> student = (from s in dc.Persons
+                                          select s);
+             return student.AsQueryable();
+
+         }*/
+
+
     }
 }

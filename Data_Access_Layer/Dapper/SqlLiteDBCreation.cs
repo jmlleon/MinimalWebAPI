@@ -12,11 +12,10 @@ using Microsoft.Extensions.Configuration;
 namespace Data_Access_Layer.Dapper
 {
     public static class SqlLiteDBCreation
-    {
-        //private readonly IConfiguration _configuration;
- 
-        //this WebApplication app
-        public static async Task<bool> CreateSqlLiteDBAsync(this WebApplication app)
+    {             
+
+            //Extension Method to generate Sqlite DB
+            public static async Task<bool> CreateSqlLiteDBAsync(this WebApplication app)
         {
             //string connectionString = _configuration.GetConnectionString("SqliteConnection")!;
             string connectionString = app.Configuration.GetConnectionString("SqliteConnection")!;
@@ -44,13 +43,13 @@ namespace Data_Access_Layer.Dapper
             try
             {
 
-                var studentsExists = await connection.QueryFirstOrDefaultAsync<int>(
+                var studentsTableExists = await connection.QueryFirstOrDefaultAsync<int>(
                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Student';", transaction: transaction);
 
                 //var studentsCount = await connection.QueryFirstOrDefaultAsync<int>(
                 //   "SELECT COUNT(*) FROM Student;", transaction: transaction);
 
-                if (studentsExists > 0)
+                if (studentsTableExists > 0)
                 {
                     return true;
                 }
@@ -61,7 +60,9 @@ namespace Data_Access_Layer.Dapper
                 await connection.ExecuteAsync(insertSQL, transaction: transaction);
             
                 transaction.Commit();
+
                 connection.Close();
+
                 return true;
             }
             catch (Exception ex)
@@ -72,9 +73,8 @@ namespace Data_Access_Layer.Dapper
                 connection.Close();
                 return false;
             }
-        }
+        }       
+    
     }
-
-
 
 }

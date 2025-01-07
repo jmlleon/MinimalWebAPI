@@ -8,5 +8,6 @@ namespace Application_Layer.DTO
 {
     public abstract class BaseDTO
     {
+        public int Id { get; set; }
     }
 }

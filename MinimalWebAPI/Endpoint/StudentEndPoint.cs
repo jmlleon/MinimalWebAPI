@@ -1,9 +1,10 @@
 ﻿using Application_Layer.DTO;
 using Application_Layer.Interfaces;
-
+using Application_Layer.Mapping;
+using Domain_Layer.Errors;
 using Domain_Layer.Models;
 using Domain_Layer.Validation;
-
+using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
 namespace MinimalWebAPI.Endpoint
@@ -14,71 +15,68 @@ namespace MinimalWebAPI.Endpoint
         public static void AddEndPoint(IEndpointRouteBuilder app) {
 
 
-            app.MapGet("/students", async (IStudentService<StudentDTO> studentService) =>
-                await studentService.GetAll());
-
-            app.MapGet("/students/{studentName}", async (string studentName, IStudentService<StudentDTO> studentService) =>
+            //Get All
+            app.MapGet("/students", async ( IService<StudentDTO, Student> studentService) =>
             {
-                var students = await studentService.GetAll();
-                return students.Where(s => s.Name!.Equals(studentName)).ToList();
+                var result = await studentService.GetAll();
+
+                return Results.Ok(result.Value);
+
+            });
+               
+
+            //Get by Name
+
+            app.MapGet("/students/{studentName}", async (string studentName, IService<StudentDTO, Student> studentService) =>
+            {
+               var result= await studentService.ExecuteQuery(x=>x.Name==studentName);  
+                
+                return Results.Ok(result.ToList());
 
             });
 
-
-            app.MapGet("/students/{id:int}", async (int id, IStudentService<StudentDTO> studentService) =>
+            //Get By Id
+            app.MapGet("/students/{id:int}", async (int id, IService<StudentDTO, Student> studentService) =>
             {
-                return await studentService.GetById(id) is StudentDTO student ? Results.Ok(student) : Results.NotFound();
+
+                //Result Pattern
+
+                var result = await studentService.GetById(id);
+
+                return result.IsFailure ? Results.NotFound() : Results.Ok(result.Value);              
             });
 
-            app.MapPost("/students", async (StudentDTO student, IStudentService<StudentDTO> studentService) =>
-            {
 
-                var validationResult = StudentValidator.IsValid(student);
+            //Insert Student
+            app.MapPost("/students", async (StudentDTO student,IService<StudentDTO, Student> studentService) =>
+            {                               
+                var result = await studentService.Add(student);
+                return result.IsFailure ? Results.BadRequest(result.Error) : Results.Created($"/students/{student.Id}", student);               
 
-                if (validationResult==ValidationResult.Success)
-                {
-                    await studentService.Add(student);
-                    return Results.Created($"/students/{student.Id}", student);
-                }
-                else
-                {
-                    var dictionaryValue = new Dictionary<string, string[]>{ { "error", validationResult.ErrorMessage!.Split(",") } };
+            });
 
-                    return Results.ValidationProblem(dictionaryValue);
-                    //return Results.BadRequest(validationResult.ErrorMessage);                    
+            //Update Student
+
+            app.MapPut("/students/{id}", async (int id, StudentDTO studentAdd, IService<StudentDTO, Student> studentService) =>
+            {                              
+                
                    
+                var result= await studentService.Update(studentAdd,id);               
 
-                }
-
-
+                return result.IsFailure ? Results.BadRequest(result.Error) : Results.NoContent();
+              
+               
             });
 
-            app.MapPut("/students/{id}", async (int id, Student studenAdd, IStudentService<StudentDTO> studentService) =>
+            //Remove Student
+
+            app.MapDelete("/students/{id}", async (int id, IService<StudentDTO, Student> studentService) =>
             {
-                var student = await studentService.GetById(id);
+                var result = await studentService.Delete(id);
 
-                if (student is null) return Results.NotFound();
-
-              /*  using(var validationResult = StudentValidator.IsValid(student))
-                {
-                    await studentService.Add(student);
-                    return Results.Created($"/students/{student.Id}", student);
-                }*/
-
-
-                return Results.NoContent();
-            });
-
-            app.MapDelete("/students/{id}", async (int id, IStudentService<StudentDTO> studentService) =>
-            {
-                var student = await studentService.GetById(id);
-
-                if (student is not null)
-                {
-                    return Results.NoContent();
-                }
-
-                return Results.NotFound();
+                return result.IsFailure ? Results.NotFound() : Results.NoContent();
+                         
+               
             });
 
 

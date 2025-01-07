@@ -8,6 +8,7 @@ namespace Domain_Layer.Models
 {
     public class Student:BaseEntity
     {
+        //public int Id { get; set; }
         public string Name { get; set; } = String.Empty;
         public int Age { get; set;}
         public string? Description { get; set; }
