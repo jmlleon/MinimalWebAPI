@@ -15,19 +15,7 @@ namespace Domain_Layer.Validation
 
         public static ValidationResult IsValidOnAdd(Student student) {
 
-            var errors = new List<string>();
-
-            if (student == null)
-            {
-                errors.Add($"The {nameof(student)} can't be null");
-            }
-
-            if (student!=null && student.Age <= 0) 
-            {
-                errors.Add($"The {nameof(student)} age is not correct");
-            }
-
-            //if (studentAdd.Id != id) return Results.BadRequest("The Student Id don't math");
+            var errors = CommonErrors(student);
 
             return errors.Count == 0 ? ValidationResult.Success! : new ValidationResult(string.Join(",",errors));
         
@@ -35,8 +23,19 @@ namespace Domain_Layer.Validation
 
         public static ValidationResult IsValidOnUpdate(Student student, int studentId)
         {
+            var errors = CommonErrors(student);            
 
-            var errors = new List<string>();
+            if (student != null && student.Id != studentId)
+            {
+                errors.Add($"The {nameof(student)} Id don't math");
+            }
+
+            return errors.Count == 0 ? ValidationResult.Success! : new ValidationResult(string.Join(",", errors));
+        }
+
+        private static List<string> CommonErrors(Student student) {
+
+            List<string> errors = new();
 
             if (student == null)
             {
@@ -48,10 +47,8 @@ namespace Domain_Layer.Validation
                 errors.Add($"The {nameof(student)} age is not correct");
             }
 
-            //if (studentAdd.Id != id) return Results.BadRequest("The Student Id don't math");
-
-            return errors.Count == 0 ? ValidationResult.Success! : new ValidationResult(string.Join(",", errors));
-
+            return errors;
+        
         }
 
     }

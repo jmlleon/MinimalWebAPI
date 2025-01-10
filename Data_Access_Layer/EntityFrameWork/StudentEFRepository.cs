@@ -21,15 +21,10 @@ namespace Data_Access_Layer.EntityFrameWork
             _studentContext = studentContext;
         }
 
-        public async Task<Student> Add(Student student)
+        public async Task<int> Add(Student student)
         {
-            _studentContext.Students.Add(student);
-
-            //await _studentContext.SaveChangesAsync();
-
-            return student;
-
-
+            _studentContext.Students.Add(student);  
+            return await Task.FromResult(0);
         }
 
         public async Task<int> Delete(int studentId)
@@ -40,7 +35,7 @@ namespace Data_Access_Layer.EntityFrameWork
                  return 1;
             }
 
-            return -1;
+            return 0;
         }
 
         public async Task<IQueryable<Student>> ExecuteQuery(Expression<Func<Student, bool>> predicate)
@@ -73,10 +68,9 @@ namespace Data_Access_Layer.EntityFrameWork
                 student.Description = studentAdd.Description;
 
                 return 1;
-
             }
 
-            return -1;
+            return 0;
           
         }
     }

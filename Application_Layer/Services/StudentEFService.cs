@@ -33,47 +33,50 @@ namespace Application_Layer.Services
         public async Task<Result> Add(StudentDTO studentDTO)
         {
 
-            try
-            {
                 var validationResult = StudentValidator.IsValidOnAdd(studentDTO.MapDTOtoStudent());
 
                 if (validationResult != ValidationResult.Success)
-                {
-                    var dictionaryValue = new Dictionary<string, string[]> { { "error", validationResult.ErrorMessage!.Split(",") } };
+                {                    
 
-                    return Result.Failure(new Error("Validation Error", dictionaryValue["error"].ToString() ?? ""));
+                    return Result.Failure(new Error("Validation Error",String.Join(",",validationResult.ErrorMessage!.Split(","))));
                     
                 }
 
-                var student = await _studentRepository.Add(studentDTO.MapDTOtoStudent());
+              await _studentRepository.Add(studentDTO.MapDTOtoStudent());
 
-                await _unitOfWork.SaveChangesAsync();
+              var result=await _unitOfWork.SaveChangesAsync();
 
-                return Result.Success();
-
-            }
-            catch (Exception)
-            {
-                return Result.Failure(StudentErrors.StudentAddError);
-            }   
-
+              return result == 0 ? Result.Failure(StudentErrors.StudentAddError): Result.Success();
+            
         }      
 
 
         public async Task<CustomResult<int>> Delete(int entity)
         {
-            if (await _studentRepository.Delete(entity) > 0) {
-                return CustomResult<int>.Success(await _unitOfWork.SaveChangesAsync());  
-            }
 
-            return CustomResult<int>.Failure(CustomError.DeleteError("Error on Delete Student"));           
-            
+            if (await _studentRepository.Delete(entity) == 0)
+            {
+                return CustomResult<int>.Failure(CustomError.UpdateError("Student not found for Delete"));
+
+            }           
+
+            var result=await _unitOfWork.SaveChangesAsync();
+
+            return result==0 ? CustomResult<int>.Failure(CustomError.DeleteError("Error on Delete Student")):CustomResult<int>.Success(result);
+           
         }
 
-        public async Task<IQueryable<StudentDTO>> ExecuteQuery(Expression<Func<Student, bool>> predicate)
+        public async Task<CustomResult<IQueryable<StudentDTO>>> ExecuteQuery(Expression<Func<Student, bool>> predicate)
         {
-            var result= await _studentRepository.ExecuteQuery(predicate);
-            return result.Select(x=>x.MapStundentToDTO()).AsQueryable();
+            var result= await _studentRepository.ExecuteQuery(predicate);           
+
+            if (!result.Any())
+            {
+                return CustomResult<IQueryable<StudentDTO>>.Failure(CustomError.RecordNotFound("Student not found by name"));
+            }
+
+            return CustomResult<IQueryable<StudentDTO>>.Success(result.Select(x => x.MapStundentToDTO()).AsQueryable());
+            
         }
 
         public async Task<CustomResult<IEnumerable<StudentDTO>>> GetAll()
@@ -86,6 +89,12 @@ namespace Application_Layer.Services
         public async Task<CustomResult<StudentDTO>> GetById(int studentId)
         {
             var student=await _studentRepository.GetById(studentId);
+
+            if (student == null)
+            {
+                return CustomResult<StudentDTO>.Failure(CustomError.RecordNotFound("Student Not Found"));
+            }
+
             return CustomResult<StudentDTO>.Success(student!.MapStundentToDTO());
         }
 
@@ -95,18 +104,20 @@ namespace Application_Layer.Services
             var validationResult = StudentValidator.IsValidOnUpdate(studentDTO.MapDTOtoStudent(), id);
 
             if (validationResult != ValidationResult.Success)
-            {             
-                return CustomResult<int>.Failure(CustomError.ValidationError(validationResult.ErrorMessage!.Split(",").ToString() ?? ""));
+            {
+                return CustomResult<int>.Failure(CustomError.ValidationError(String.Join(",", validationResult.ErrorMessage!.Split(","))));
             }
 
+            if (await _studentRepository.Update(studentDTO.MapDTOtoStudent()) == 0)
+            {
+                return CustomResult<int>.Failure(CustomError.UpdateError("Student not found for Update"));
 
-            if (await _studentRepository.Update(studentDTO.MapDTOtoStudent()) > 0) { 
+            }
+
+            var result=await _unitOfWork.SaveChangesAsync();                       
+
+            return result == 0 ? CustomResult<int>.Failure(CustomError.UpdateError("Error on Update Student")): CustomResult<int>.Success(result);
             
-            return  CustomResult<int>.Success(await _unitOfWork.SaveChangesAsync());
-
-            }
-
-            return CustomResult<int>.Failure(CustomError.UpdateError("Error on Update Student"));
         }
     }
 }

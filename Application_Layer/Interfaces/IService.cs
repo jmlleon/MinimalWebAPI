@@ -11,7 +11,7 @@ namespace Application_Layer.Interfaces
     {
         Task<CustomResult<IEnumerable<T>>> GetAll();
         Task<CustomResult<T>> GetById(int entityId);         
-        Task<IQueryable<T>> ExecuteQuery(Expression<Func<U, bool>> predicate);   
+        Task<CustomResult<IQueryable<T>>> ExecuteQuery(Expression<Func<U, bool>> predicate);   
         
         //Return with Result class of Milan
         Task<Result> Add(T entity);

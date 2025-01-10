@@ -30,52 +30,44 @@ namespace Application_Layer.Services
 
 
         public async Task<Result> Add(StudentDTO studentDTO)
-        {        
-
-            try
-            {
-                var validationResult = StudentValidator.IsValidOnAdd(studentDTO.MapDTOtoStudent());
+        {         
+            
+                 var validationResult = StudentValidator.IsValidOnAdd(studentDTO.MapDTOtoStudent());
 
                 if (validationResult != ValidationResult.Success)
                 {
-                    var dictionaryValue = new Dictionary<string, string[]> { { "error", validationResult.ErrorMessage!.Split(",") } };
-
-                    return Result.Failure(new Error("Validation Error", dictionaryValue["error"].ToString() ?? ""));                    
+                    return Result.Failure(new Error("Validation Error", String.Join(",", validationResult.ErrorMessage!.Split(","))));                    
                     
                 }
 
-                var student = await _studentRepository.Add(studentDTO.MapDTOtoStudent());
+                var result = await _studentRepository.Add(studentDTO.MapDTOtoStudent());            
 
-                return Result.Success();
-            }
-            catch (Exception)
-            {
-                return Result.Failure(StudentErrors.StudentAddError);
-            }
-           
+                return result > 0 ? Result.Success(): Result.Failure(StudentErrors.StudentAddError); ;           
             
-            //return student.MapStundentToDTO();
         }
 
         public async Task<CustomResult<int>> Delete(int entity)
-        {
+        {                      
 
-            var result = await _studentRepository.Delete(entity) > 0 ? 1 : -1;
+            if (await _studentRepository.Delete(entity) == 0) {
 
-            if (result == -1) {
-
-                return CustomResult<int>.Failure(CustomError.DeleteError("Error on Delete Student"));
-            
+                return CustomResult<int>.Failure(CustomError.DeleteError("Error on Delete Student"));            
             }
 
-            return CustomResult<int>.Success(result);  
+            return CustomResult<int>.Success(1);  
         }
 
-        public async Task<IQueryable<StudentDTO>> ExecuteQuery(Expression<Func<Student, bool>> predicate)
+        public async Task<CustomResult<IQueryable<StudentDTO>>> ExecuteQuery(Expression<Func<Student, bool>> predicate)
         {
             var result = await _studentRepository.ExecuteQuery(predicate);
 
-            return result.Select(x=>x.MapStundentToDTO());
+            if (!result.Any()) {
+
+                return CustomResult<IQueryable<StudentDTO>>.Failure(CustomError.RecordNotFound("Student not found by name"));            
+            
+            }
+
+            return CustomResult<IQueryable<StudentDTO>>.Success(result.Select(x=>x.MapStundentToDTO()));
         }
 
         public async Task<CustomResult<IEnumerable<StudentDTO>>> GetAll()
@@ -87,7 +79,7 @@ namespace Application_Layer.Services
 
         public async Task<CustomResult<StudentDTO>> GetById(int studentId)
         {
-            var student=await _studentRepository.GetById(studentId);
+            var student=await _studentRepository.GetById(studentId);           
 
             if (student == null) {
 
@@ -102,7 +94,7 @@ namespace Application_Layer.Services
 
             var students = await ExecuteQuery(x=>x.Name==name);
 
-            return students.Where(s => s.Name!.Equals(name));
+            return students.Value.Where(s => s.Name!.Equals(name));
         }
 
         public async Task<CustomResult<int>> Update(StudentDTO studentDTO, int id)
@@ -112,19 +104,15 @@ namespace Application_Layer.Services
 
             if (validationResult != ValidationResult.Success)
             {
-                var dictionaryValue = new Dictionary<string, string[]> { { "error", validationResult.ErrorMessage!.Split(",") } };
-
-                return CustomResult<int>.Failure(CustomError.ValidationError(dictionaryValue["error"].ToString() ?? ""));
-
+                return CustomResult<int>.Failure(CustomError.ValidationError(String.Join(" ", validationResult.ErrorMessage!.Split(","))));
                 //return Results.ValidationProblem(dictionaryValue);
             }
 
-            var result= await _studentRepository.Update(studentDTO.MapDTOtoStudent()) > 0 ? 1 : -1;
+            var result= await _studentRepository.Update(studentDTO.MapDTOtoStudent());
            
-            if(result < 0) {
+            if(result ==0) {
 
-                return CustomResult<int>.Failure(CustomError.UpdateError("Student Update Error"));            
-            
+                return CustomResult<int>.Failure(CustomError.UpdateError("Student Update Error"));                 
             }            
             
             return CustomResult<int>.Success(result);

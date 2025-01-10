@@ -25,7 +25,8 @@ namespace Application_Layer.Mapping
         public static Student MapDTOtoStudent(this StudentDTO student)
         {
             return new Student
-            {               
+            {  
+                Id=student.Id,
                 Name = student.Name,
                 Description = student.Description,
                 Age = student.Age

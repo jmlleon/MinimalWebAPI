@@ -13,7 +13,7 @@ namespace Domain_Layer.Interfaces
       Task<IEnumerable<T>> GetAll();
       Task<IQueryable<T>> ExecuteQuery(Expression<Func<T, bool>> predicate);
       Task<T?> GetById(int entityId);
-      Task<T> Add(T entity);
+      Task<int> Add(T entity);
       Task<int> Update(T entity);
       Task<int> Delete(int entityId);
 

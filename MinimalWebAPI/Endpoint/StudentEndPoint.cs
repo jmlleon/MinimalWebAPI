@@ -29,9 +29,16 @@ namespace MinimalWebAPI.Endpoint
 
             app.MapGet("/students/{studentName}", async (string studentName, IService<StudentDTO, Student> studentService) =>
             {
-               var result= await studentService.ExecuteQuery(x=>x.Name==studentName);  
+              
+                var result= await studentService.ExecuteQuery(x=>x.Name==studentName);
+
+                if (result.IsFailure) {
+                    
+                    return Results.NotFound(result.Error);       
+                    
+                }
                 
-                return Results.Ok(result.ToList());
+                return Results.Ok(result.Value.ToList());
 
             });
 
@@ -43,7 +50,7 @@ namespace MinimalWebAPI.Endpoint
 
                 var result = await studentService.GetById(id);
 
-                return result.IsFailure ? Results.NotFound() : Results.Ok(result.Value);              
+                return result.IsFailure ? Results.NotFound(result.Error) : Results.Ok(result.Value);              
             });
 
 
@@ -58,8 +65,7 @@ namespace MinimalWebAPI.Endpoint
             //Update Student
 
             app.MapPut("/students/{id}", async (int id, StudentDTO studentAdd, IService<StudentDTO, Student> studentService) =>
-            {                              
-                
+            {             
                    
                 var result= await studentService.Update(studentAdd,id);               
 
@@ -74,7 +80,7 @@ namespace MinimalWebAPI.Endpoint
             {
                 var result = await studentService.Delete(id);
 
-                return result.IsFailure ? Results.NotFound() : Results.NoContent();
+                return result.IsFailure ? Results.NotFound(result.Error) : Results.NoContent();
                          
                
             });

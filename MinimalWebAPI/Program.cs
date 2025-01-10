@@ -4,17 +4,21 @@ using Application_Layer.Services;
 using Data_Access_Layer.Dapper;
 using Data_Access_Layer.EntityFrameWork;
 using Data_Access_Layer.InMemoryDB;
+using Domain_Layer.Exceptions;
 using Domain_Layer.Interfaces;
 using Domain_Layer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using MinimalWebAPI.Endpoint;
+using System.Diagnostics;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 //builder.Services.Configure<Logging>(Configuration.GetSection("Logging"));
 var configValue = builder.Configuration.GetValue<string>("Repository:value");
+
+Debug.WriteLine("The Value is "+configValue);
 
 switch (configValue) {
 
@@ -31,6 +35,8 @@ switch (configValue) {
     case "efcore":
 
         #region EntityFrameWork
+
+        builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         builder.Services.AddScoped<IService<StudentDTO, Student>, StudentEFService>();
 
@@ -60,17 +66,21 @@ switch (configValue) {
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+builder.Services.AddProblemDetails();
+
+
 var app = builder.Build();
 
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment()) {
-
-
     //app.useSwagger();
-
 }
 
 #region DAPPER
-if (configValue!.Contains("dapper")) {
+if (configValue!.Contains("dapper") || configValue!.Contains("efcore")) {
 
     await SqlLiteDBCreation.CreateSqlLiteDBAsync(app);
 

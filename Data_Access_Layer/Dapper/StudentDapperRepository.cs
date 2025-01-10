@@ -26,17 +26,14 @@ namespace Data_Access_Layer.Dapper
 
         }
 
-
         private SqliteConnection GetConnection() =>new (_configuration.GetConnectionString("SqliteConnection"));          
         
 
-        public async Task<Student> Add(Student entity)
+        public async Task<int> Add(Student entity)
         {
             using var _connection=GetConnection();
             var sqlQuery = "Insert into Student(Name,Age,Description ) values (@name, @age, @description)";
-            await _connection.ExecuteAsync(sqlQuery, new { name = entity.Name, age = entity.Age, description = entity.Description});
-            return entity;
-
+            return await _connection.ExecuteAsync(sqlQuery, new { name = entity.Name, age = entity.Age, description = entity.Description});
         }
 
         public async Task<int> Delete(int entityId)
@@ -58,7 +55,7 @@ namespace Data_Access_Layer.Dapper
         {
             using var _connection = GetConnection();
             var slqQuery = "select * from Student where Id=@id";
-            var student = await _connection.QueryFirstAsync<Student>(slqQuery, new { id=studentId });
+            var student = await _connection.QuerySingleOrDefaultAsync<Student>(slqQuery, new { id=studentId });
             return student;   
 
         }
@@ -71,20 +68,14 @@ namespace Data_Access_Layer.Dapper
            
         }
 
-        public Task<IQueryable<Student>> ExecuteQuery(Expression<Func<Student, bool>> predicate)
+        public async Task<IQueryable<Student>> ExecuteQuery(Expression<Func<Student, bool>> predicate)
         {
-            throw new NotImplementedException();
+            using var _connection = GetConnection();
+            var slqQuery = "select * from Student";
+            var students =await _connection.QueryAsync<Student>(slqQuery);
+           
+            return students.AsQueryable().Where(predicate);
         }
-
-
-        /* public IQueryable<Student> Retrieve()
-         {
-             IQueryable<Student> student = (from s in dc.Persons
-                                          select s);
-             return student.AsQueryable();
-
-         }*/
-
 
     }
 }

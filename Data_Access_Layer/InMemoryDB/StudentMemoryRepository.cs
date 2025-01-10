@@ -15,19 +15,19 @@ namespace Data_Access_Layer.InMemoryDB
 
         public StudentMemoryRepository()
         {
-            studentList = new()
-            {
+            studentList =
+            [
                 new() {Id=1, Name = "John Michel", Age = 35, Description = "First Student" },
                 new() {Id=2, Name = "Silver Stone", Age = 28, Description = "Second Student" },
                 new() {Id=3, Name = "Lucas Jonson", Age = 30, Description = "Third Student" },                 
-            };
+            ];
 
         }
 
-        public async Task<Student> Add(Student student)
+        public async Task<int> Add(Student student)
         {
             studentList.Add(student);
-            return await Task.FromResult(student);
+            return await Task.FromResult(1);
         }
 
         public async Task<int> Delete(int studentId)
@@ -56,7 +56,7 @@ namespace Data_Access_Layer.InMemoryDB
             
             }
 
-            return await Task.FromResult(-1);
+            return await Task.FromResult(0);
         }
 
     }
