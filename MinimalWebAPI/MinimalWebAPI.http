@@ -1,0 +1,18 @@
+﻿@MinimalWebAPI_HostAddress = https://localhost:7121
+
+POST {{MinimalWebAPI_HostAddress}}/students
+Content-Type:application/json
+
+{
+ "Id":1,
+ "Name":"John Michael Stone",
+ "Age":25,
+ "Description":"Hello World"
+
+}
+
+###
+
+POST {{MinimalWebAPI_HostAddress}}/students
+
+###
